@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
 }
 
 android {
@@ -37,6 +38,12 @@ android {
 }
 
 dependencies {
+    // A helyi adatbázis futtatásához szükséges Room-könyvtár.
+    implementation(libs.androidx.room.runtime)
+
+    // A Room adatbázis-kezelő kódját fordításkor a KSP generálja.
+    ksp(libs.androidx.room.compiler)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)

@@ -1,6 +1,7 @@
 package hu.swy.receptek
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
@@ -24,17 +25,24 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import hu.swy.receptek.data.RecipeDatabase
+import hu.swy.receptek.data.RecipeEntity
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 // Egy recept alapadatai, hozzávalói és elkészítési lépései.
 data class Recipe(
@@ -240,15 +248,34 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Kezeli a receptgyűjteményt és a lista, adatlap, illetve űrlap közötti váltást.
+    // Az adatbázisból tölti a recepteket, és kezeli a képernyőváltást.
     @Composable
     fun RecipeApp() {
-        // Átmeneti gyűjtemény: az új receptek még nem kerülnek adatbázisba.
-        val recipes = remember {
-            mutableStateListOf<Recipe>().apply {
-                addAll(sampleRecipes)
-            }
+        val context = LocalContext.current
+        val appContext = context.applicationContext
+
+        val database = remember(appContext) {
+            RecipeDatabase.getInstance(appContext)
         }
+
+        val recipeDao = remember(database) {
+            database.recipeDao()
+        }
+
+        // A Flow példányát megőrizzük az újrarajzolások között.
+        val recipeFlow = remember(recipeDao) {
+            recipeDao.observeAll()
+        }
+
+        val storedRecipes by recipeFlow.collectAsState(
+            initial = emptyList()
+        )
+
+        val recipes = storedRecipes.map { entity ->
+            entity.toRecipe()
+        }
+
+        val coroutineScope = rememberCoroutineScope()
 
         var selectedRecipeId by rememberSaveable {
             mutableStateOf<Long?>(null)
@@ -258,29 +285,57 @@ class MainActivity : ComponentActivity() {
             mutableStateOf(false)
         }
 
+        var isSaving by remember {
+            mutableStateOf(false)
+        }
+
         val selectedRecipe = recipes.find { recipe ->
             recipe.id == selectedRecipeId
         }
 
         when {
             isAddingRecipe -> {
+                // Mentés közben nem engedjük elhagyni az űrlapot.
                 BackHandler {
-                    isAddingRecipe = false
+                    if (!isSaving) {
+                        isAddingRecipe = false
+                    }
                 }
 
                 RecipeFormScreen(
                     onSave = { newRecipe ->
-                        // A következő szabad azonosítót a gyűjteményből számítjuk.
-                        val nextId = (recipes.maxOfOrNull { it.id } ?: 0L) + 1L
+                        // Megakadályozza a többszörös mentés elindítását.
+                        if (!isSaving) {
+                            isSaving = true
 
-                        recipes.add(
-                            newRecipe.copy(id = nextId)
-                        )
+                            coroutineScope.launch {
+                                try {
+                                    val entity = RecipeEntity.fromRecipe(
+                                        newRecipe.copy(id = 0L)
+                                    )
 
-                        isAddingRecipe = false
+                                    recipeDao.insert(entity)
+
+                                    // Csak sikeres adatbázismentés után lépünk vissza.
+                                    isAddingRecipe = false
+                                } catch (error: CancellationException) {
+                                    throw error
+                                } catch (error: Exception) {
+                                    Toast.makeText(
+                                        appContext,
+                                        "Nem sikerült menteni a receptet.",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                } finally {
+                                    isSaving = false
+                                }
+                            }
+                        }
                     },
                     onCancel = {
-                        isAddingRecipe = false
+                        if (!isSaving) {
+                            isAddingRecipe = false
+                        }
                     }
                 )
             }
@@ -311,7 +366,6 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-
 
     // Új recept adatainak megadása, ellenőrzése és átadása mentésre.
     @Composable
