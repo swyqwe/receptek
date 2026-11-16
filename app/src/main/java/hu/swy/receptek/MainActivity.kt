@@ -19,33 +19,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
@@ -56,30 +46,6 @@ import hu.swy.receptek.data.RecipeEntity
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
-// Egy recept alapadatai, hozzávalói és elkészítési lépései.
-data class Recipe(
-    val id: Long,
-    val title: String,
-    val description: String,
-    val servings: Int,
-    val totalMinutes: Int,
-    val ingredients: List<String>,
-    val steps: List<String>,
-    val category: String = "Egyéb"
-)
-
-// Az új receptekhez alapértelmezetten választható kategóriák.
-private val defaultRecipeCategories = listOf(
-    "Egyéb",
-    "Előétel",
-    "Leves",
-    "Főétel",
-    "Köret",
-    "Saláta",
-    "Desszert",
-    "Péksütemény",
-    "Ital"
-)
 
 // Ideiglenes receptgyűjtemény a felület kipróbálásához.
 private val sampleRecipes = listOf(
@@ -360,44 +326,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Egy recept rövid összefoglalója kattintható kártyán.
-    @Composable
-    fun RecipeCard(
-        recipe: Recipe,
-        onClick: () -> Unit,
-        modifier: Modifier = Modifier
-    ) {
-        Card(
-            onClick = onClick,
-            modifier = modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = recipe.title,
-                    style = MaterialTheme.typography.titleLarge
-                )
 
-                Text(
-                    text = recipe.category,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-
-                Text(
-                    text = recipe.description,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Text(
-                    text = "${recipe.servings} adag • ${recipe.totalMinutes} perc",
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-    }
 
     // A receptlista Android Studio-előnézete mintaadatokkal.
     @Preview(showBackground = true)
@@ -995,66 +924,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Egy kategória kiválasztása a lenyitható listából.
-    @OptIn(ExperimentalMaterial3Api::class)
-    @Composable
-    fun CategoryDropdown(
-        selectedCategory: String,
-        categories: List<String>,
-        onCategorySelected: (String) -> Unit,
-        modifier: Modifier = Modifier
-    ) {
-        var expanded by remember {
-            mutableStateOf(false)
-        }
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-            modifier = modifier
-        ) {
-            OutlinedTextField(
-                value = selectedCategory,
-                onValueChange = {},
-                readOnly = true,
-                singleLine = true,
-                label = {
-                    Text(text = "Kategória")
-                },
-                trailingIcon = {
-                    ExposedDropdownMenuDefaults.TrailingIcon(
-                        expanded = expanded
-                    )
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(
-                        ExposedDropdownMenuAnchorType.PrimaryNotEditable
-                    )
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = {
-                    expanded = false
-                }
-            ) {
-                categories.forEach { categoryName ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(text = categoryName)
-                        },
-                        onClick = {
-                            onCategorySelected(categoryName)
-                            expanded = false
-                        },
-                        contentPadding =
-                            ExposedDropdownMenuDefaults.ItemContentPadding
-                    )
-                }
-            }
-        }
-    }
 
 
     // A receptlista előnézete egy előre megadott kereséssel.
