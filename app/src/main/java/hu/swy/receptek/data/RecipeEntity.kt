@@ -3,6 +3,7 @@ package hu.swy.receptek.data
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import hu.swy.receptek.Recipe
+import androidx.room.ColumnInfo
 
 // A recipes tábla egy sorát leíró adatbázis-entitás.
 @Entity(tableName = "recipes")
@@ -14,7 +15,9 @@ data class RecipeEntity(
     val servings: Int,
     val totalMinutes: Int,
     val ingredients: List<String>,
-    val steps: List<String>
+    val steps: List<String>,
+    @ColumnInfo(defaultValue = "'Egyéb'")
+    val category: String = "Egyéb"
 ) {
     // Az adatbázisban tárolt recept átalakítása a felület modelljévé.
     fun toRecipe(): Recipe {
@@ -25,7 +28,8 @@ data class RecipeEntity(
             servings = servings,
             totalMinutes = totalMinutes,
             ingredients = ingredients,
-            steps = steps
+            steps = steps,
+            category = category
         )
     }
 
@@ -39,7 +43,8 @@ data class RecipeEntity(
                 servings = recipe.servings,
                 totalMinutes = recipe.totalMinutes,
                 ingredients = recipe.ingredients,
-                steps = recipe.steps
+                steps = recipe.steps,
+                category = recipe.category
             )
         }
     }

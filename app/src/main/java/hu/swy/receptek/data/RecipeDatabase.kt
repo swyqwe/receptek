@@ -5,11 +5,13 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
 // A receptadatbázis és a hozzá tartozó DAO központi elérési pontja.
 @Database(
     entities = [RecipeEntity::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(RecipeConverters::class)
@@ -22,6 +24,18 @@ abstract class RecipeDatabase : RoomDatabase() {
         @Volatile
         private var instance: RecipeDatabase? = null
 
+        // Hozzáadja a kategóriát a meglévő receptek törlése nélkül.
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    ALTER TABLE recipes
+                    ADD COLUMN category TEXT NOT NULL DEFAULT 'Egyéb'
+                    """.trimIndent()
+                )
+            }
+        }
+
         // Egyetlen közös adatbázispéldányt biztosít az alkalmazásnak.
         fun getInstance(context: Context): RecipeDatabase {
             return instance ?: synchronized(this) {
@@ -30,6 +44,7 @@ abstract class RecipeDatabase : RoomDatabase() {
                     RecipeDatabase::class.java,
                     "recipes.db"
                 )
+                    .addMigrations(MIGRATION_1_2)
                     .build()
                     .also { database ->
                         instance = database
