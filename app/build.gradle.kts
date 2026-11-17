@@ -44,6 +44,13 @@ dependencies {
     // A Room adatbázis-kezelő kódját fordításkor a KSP generálja.
     ksp(libs.androidx.room.compiler)
 
+    // ViewModel, a hozzá tartozó coroutine-scope és Compose-integráció.
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+
+// Életciklushoz igazított állapotfigyelés Compose-ban.
+    implementation(libs.androidx.lifecycle.runtime.compose)
+
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.material3)
